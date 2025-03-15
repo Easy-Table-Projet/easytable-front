@@ -1,4 +1,3 @@
-// services/restaurantService.js
 import apiClient from "./apiClient";
 
 /**
@@ -28,6 +27,25 @@ class RestaurantService {
       return response;
     } catch (error) {
       console.error("Error searching restaurants:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get restaurant by ID
+   * @param {number|string} restaurantId - Restaurant ID
+   * @returns {Promise<Object>} - Restaurant data
+   */
+  async getRestaurantById(restaurantId) {
+    if (!restaurantId) {
+      throw new Error("Restaurant ID is required");
+    }
+
+    try {
+      const response = await apiClient.get(`/api/restaurants/${restaurantId}`);
+      return response;
+    } catch (error) {
+      console.error(`Error getting restaurant with ID ${restaurantId}:`, error);
       throw error;
     }
   }

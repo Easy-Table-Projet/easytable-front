@@ -3,61 +3,128 @@
 import React, { useState, useEffect } from "react";
 import { Search } from "lucide-react";
 import restaurantService from "@/services/restaurantService";
+import { useRouter } from "next/navigation";
 
 // Restaurant card component
 const RestaurantCard = ({
+  id,
   name,
   description,
   category,
   rating,
   address,
-  availableTables,
   maxTableCount,
+  remainingTableCount,
   waitlistCount,
 }) => {
-  // Calculate available tables based on maxTableCount if availableTables isn't provided
-  const tables =
-    availableTables !== undefined
-      ? availableTables
-      : Math.floor(Math.random() * maxTableCount);
+  const router = useRouter();
+
+  const handleReserveClick = () => {
+    router.push(`/reservation/${id}`);
+  };
+
+  const handleWaitlistClick = () => {
+    router.push(`/reservation/${id}?waitlist=true`);
+  };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow duration-300">
-      <div className="flex justify-between items-start mb-4">
-        <div className="inline-block px-2 py-1 text-xs font-semibold text-white bg-blue-500 rounded-full">
-          {category}
+    <div className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-all duration-300 border border-gray-100">
+      <div className="relative">
+        {/* Placeholder for restaurant image - could be replaced with actual image */}
+        <div className="h-32 bg-gradient-to-r from-orange-400 to-orange-500"></div>
+
+        {/* Category and rating badges positioned over the "image" */}
+        <div className="absolute top-3 left-3">
+          <div className="px-3 py-1 text-xs font-semibold text-white bg-orange-500 rounded-full shadow-sm">
+            {category}
+          </div>
         </div>
+
         {rating && (
-          <div className="flex items-center">
-            <span className="text-yellow-500">★</span>
-            <span className="ml-1 font-semibold">{rating}</span>
+          <div className="absolute top-3 right-3">
+            <div className="flex items-center px-2 py-1 bg-white bg-opacity-90 rounded-full shadow-sm">
+              <span className="text-yellow-500">★</span>
+              <span className="ml-1 font-semibold text-gray-800">{rating}</span>
+            </div>
           </div>
         )}
       </div>
-      <h3 className="mb-2 text-xl font-bold">{name}</h3>
-      {description && <p className="text-gray-600 mb-2">{description}</p>}
-      <p className="text-gray-600 mb-4">{address}</p>
-      <div className="flex justify-between items-center mt-4">
-        <div
-          className={`font-medium ${
-            tables > 0 ? "text-green-600" : "text-red-600"
-          }`}
-        >
-          {tables > 0
-            ? `${tables} / ${maxTableCount} tables available`
-            : waitlistCount > 0
-            ? `Waitlist: ${waitlistCount} people waiting`
-            : "Currently unavailable"}
+
+      <div className="p-5">
+        <h3 className="text-xl font-bold text-gray-800 mb-2 truncate">
+          {name}
+        </h3>
+        {description && (
+          <p className="text-gray-600 mb-3 text-sm line-clamp-2">
+            {description}
+          </p>
+        )}
+
+        <div className="flex items-center text-gray-500 mb-4 text-sm">
+          <svg
+            className="w-4 h-4 mr-1"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+            ></path>
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+            ></path>
+          </svg>
+          <span className="truncate">{address}</span>
         </div>
-        <button
-          className={`px-4 py-2 rounded-md cursor-pointer ${
-            tables > 0
-              ? "bg-blue-500 hover:bg-blue-600 text-white"
-              : "bg-orange-500 hover:bg-orange-600 text-white"
-          }`}
-        >
-          {tables > 0 ? "Reserve" : "Join Waitlist"}
-        </button>
+
+        <div className="border-t border-gray-100 pt-4">
+          <div className="flex justify-between items-center">
+            <div
+              className={`font-medium text-sm ${
+                remainingTableCount > 0 ? "text-green-600" : "text-orange-600"
+              }`}
+            >
+              {remainingTableCount > 0 ? (
+                <span className="flex items-center">
+                  <span className="inline-block w-2 h-2 bg-green-500 rounded-full mr-1"></span>
+                  {remainingTableCount} / {maxTableCount} tables
+                </span>
+              ) : waitlistCount > 0 ? (
+                <span className="flex items-center">
+                  <span className="inline-block w-2 h-2 bg-orange-500 rounded-full mr-1"></span>
+                  Waitlist: {waitlistCount} people
+                </span>
+              ) : (
+                <span className="flex items-center">
+                  <span className="inline-block w-2 h-2 bg-red-500 rounded-full mr-1"></span>
+                  Unavailable
+                </span>
+              )}
+            </div>
+
+            <button
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 cursor-pointer ${
+                remainingTableCount > 0
+                  ? "bg-orange-500 hover:bg-orange-600 text-white"
+                  : "bg-orange-400 hover:bg-orange-500 text-white"
+              }`}
+              onClick={
+                remainingTableCount > 0
+                  ? handleReserveClick
+                  : handleWaitlistClick
+              }
+            >
+              {remainingTableCount > 0 ? "Reserve" : "Join Waitlist"}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -92,12 +159,14 @@ const RestaurantGallery = () => {
           searchParams
         );
 
-        if (response && Array.isArray(response)) {
-          setRestaurants(response);
+        if (response && response.content && Array.isArray(response.content)) {
+          setRestaurants(response.content);
 
           // Extract unique categories
           const uniqueCategories = [
-            ...new Set(response.map((restaurant) => restaurant.category)),
+            ...new Set(
+              response.content.map((restaurant) => restaurant.category)
+            ),
           ];
           setCategories(uniqueCategories);
         } else {
@@ -116,99 +185,100 @@ const RestaurantGallery = () => {
 
   // Filter restaurants based on availability if needed
   const filteredRestaurants = showOnlyAvailable
-    ? restaurants.filter((restaurant) => {
-        // If availableTables isn't in the API, we can use a formula based on maxTableCount
-        // This is just a placeholder - adjust according to your actual data structure
-        const availableTables =
-          restaurant.availableTables !== undefined
-            ? restaurant.availableTables
-            : Math.floor(Math.random() * restaurant.maxTableCount);
-        return availableTables > 0;
-      })
+    ? restaurants.filter((restaurant) => restaurant.remainingTableCount > 0)
     : restaurants;
 
   // Handle search input change with debounce
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+
   const handleSearchChange = (e) => {
-    setSearchTerm(e.target.value);
+    setDebouncedSearchTerm(e.target.value);
   };
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto py-12 px-4">
-        <h1 className="text-3xl font-bold mb-8 text-center">Restaurant List</h1>
+  // Debounce search term to avoid too many API requests
+  useEffect(() => {
+    const timerId = setTimeout(() => {
+      setSearchTerm(debouncedSearchTerm);
+    }, 500); // 500ms debounce delay
 
-        {/* Search and filtering section */}
-        <div className="mb-8 flex flex-col md:flex-row gap-4 justify-between">
-          <div className="relative flex-grow max-w-md">
+    return () => {
+      clearTimeout(timerId);
+    };
+  }, [debouncedSearchTerm]);
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-orange-50 to-white">
+      <div className="container mx-auto py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-3xl mx-auto text-center mb-12">
+          <h1 className="text-4xl font-bold text-gray-800 mb-3 relative inline-block">
+            Find Your Table
+            <div className="absolute -bottom-2 left-1/4 right-1/4 h-1 bg-orange-500 rounded-full"></div>
+          </h1>
+          <p className="text-gray-600 mt-4">
+            Discover and reserve at the best restaurants in your area
+          </p>
+        </div>
+
+        {/* Search section */}
+        <div className="max-w-2xl mx-auto mb-12 bg-white p-4 rounded-xl shadow-md">
+          <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="h-5 w-5 text-gray-400" />
+              <Search className="h-5 w-5 text-orange-400" />
             </div>
             <input
               type="text"
-              placeholder="Search restaurant name"
-              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={searchTerm}
+              placeholder="Search for restaurants by name..."
+              className="block w-full pl-10 pr-3 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              value={debouncedSearchTerm}
               onChange={handleSearchChange}
             />
           </div>
-
-          {/* <div className="flex flex-col sm:flex-row gap-4">
-            <select
-              className="block w-full sm:w-auto py-2 px-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-            >
-              <option value="">All cuisine types</option>
-              {categories.map((category) => (
-                <option key={category} value={category}>
-                  {category}
-                </option>
-              ))}
-            </select>
-
-            <input
-              type="text"
-              placeholder="Filter by location"
-              className="block w-full sm:w-auto py-2 px-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={locationFilter}
-              onChange={(e) => setLocationFilter(e.target.value)}
-            />
-
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                id="available-only"
-                className="mr-2"
-                checked={showOnlyAvailable}
-                onChange={(e) => setShowOnlyAvailable(e.target.checked)}
-              />
-              <label htmlFor="available-only" className="text-gray-700">
-                Available tables only
-              </label>
-            </div>
-          </div> */}
         </div>
 
         {/* Loading state */}
         {loading && (
-          <div className="text-center py-12">
-            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-500 border-r-transparent"></div>
-            <p className="mt-4 text-gray-600">Loading restaurants...</p>
+          <div className="flex justify-center items-center py-16">
+            <div className="animate-pulse flex flex-col items-center">
+              <div className="w-12 h-12 rounded-full border-4 border-orange-500 border-t-transparent animate-spin mb-4"></div>
+              <p className="text-gray-600 font-medium">
+                Finding the best restaurants for you...
+              </p>
+            </div>
           </div>
         )}
 
         {/* Error state */}
         {error && (
-          <div className="text-center py-12">
-            <p className="text-xl text-red-500">{error}</p>
+          <div className="max-w-2xl mx-auto my-12 bg-red-50 border-l-4 border-red-500 p-6 rounded-lg shadow-md">
+            <div className="flex items-center">
+              <svg
+                className="w-6 h-6 text-red-500 mr-3"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                ></path>
+              </svg>
+              <p className="text-red-700 font-medium">{error}</p>
+            </div>
           </div>
         )}
 
         {/* Result count */}
         {!loading && !error && (
-          <p className="mb-4 text-gray-600">
-            {filteredRestaurants.length} restaurants found.
-          </p>
+          <div className="mb-6 flex justify-between items-center">
+            <p className="text-gray-600 font-medium">
+              <span className="text-orange-500 font-bold">
+                {filteredRestaurants.length}
+              </span>{" "}
+              restaurants found
+            </p>
+          </div>
         )}
 
         {/* Restaurant card grid */}
@@ -216,14 +286,15 @@ const RestaurantGallery = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredRestaurants.map((restaurant) => (
               <RestaurantCard
-                key={restaurant.id || restaurant._id}
+                key={restaurant.id}
+                id={restaurant.id}
                 name={restaurant.name}
                 description={restaurant.description}
                 address={restaurant.address}
                 category={restaurant.category}
                 rating={restaurant.rating}
                 maxTableCount={restaurant.maxTableCount}
-                availableTables={restaurant.availableTables}
+                remainingTableCount={restaurant.remainingTableCount}
                 waitlistCount={restaurant.waitlistCount || 0}
               />
             ))}
@@ -232,9 +303,26 @@ const RestaurantGallery = () => {
 
         {/* When no results */}
         {!loading && !error && filteredRestaurants.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-xl text-gray-500">
-              No restaurants match your search criteria.
+          <div className="text-center py-16">
+            <svg
+              className="w-16 h-16 text-orange-300 mx-auto mb-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              ></path>
+            </svg>
+            <h3 className="text-xl font-bold text-gray-700 mb-2">
+              No restaurants found
+            </h3>
+            <p className="text-gray-500">
+              Try adjusting your search criteria or check back later for new
+              options.
             </p>
           </div>
         )}

@@ -58,7 +58,7 @@ const Navbar = () => {
 
     if (role === "USER" || role === "ROLE_USER") {
       return {
-        icon: <User size={16} className="text-blue-500" />,
+        icon: <User size={16} className="text-orange-500" />,
         tooltip: "Customer",
       };
     }
